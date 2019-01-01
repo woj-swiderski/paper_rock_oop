@@ -29,21 +29,24 @@ for (let r of userRadios) {
     r.checked = false;
 }
 
+const params = { numberOfGames: 10 };
+
 
 class User {
 
     constructor(){
         this.radios = [];
         this.sel = -1;
+        this.history = [];
 
         const texts = ['Paper', 'Scissors', 'Rock'];
-        const messages = ['It\'s a draw', 'You\'ve lost', 'You\'ve won']
+        const messages = ['It\'s a draw', 'You\'ve lost', 'You\'ve won'];
         const form = document.createElement('form');
         const field = document.createElement('fieldset');
         const legend = document.createElement('legend');
         legend.textContent = 'Your choice';
         field.appendChild(legend);
-        field.addEventListener('done', (e) => {
+        field.addEventListener('userClicked', (e) => {
             this.messageField.textContent = `${messages[User.findWinner(this.computerChoice(), e.detail)]}`;
             });
 
@@ -53,11 +56,10 @@ class User {
             inp.id = `u_${i}`;
             inp.name = 'user';
             inp.value = i;
-            //~ inp.addEventListener('click', ()=>{this.sel = i;);
             inp.addEventListener('click',
                 function(){
-                    this.sel = i;
-                    field.dispatchEvent(new CustomEvent('done', {bubbles: true, detail: i}));
+                    field.dispatchEvent(new CustomEvent('userClicked', {bubbles: true, detail: i}));
+                    //~ msg2.textContent = i;
                 }.bind(this));
 
             this.radios.push(inp);
@@ -103,6 +105,10 @@ class User {
                 return 1
         }
     }
+
+    done(){
+        // ?
+    };
 
 }
 
