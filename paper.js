@@ -29,7 +29,7 @@ for (let r of userRadios) {
     r.checked = false;
 }
 
-const params = { numberOfGames: 10 };
+const params = { numberOfGames: 4 };
 
 
 class User {
@@ -41,14 +41,31 @@ class User {
 
         const texts = ['Paper', 'Scissors', 'Rock'];
         const messages = ['It\'s a draw', 'You\'ve lost', 'You\'ve won'];
-        const form = document.createElement('form');
-        const field = document.createElement('fieldset');
-        const legend = document.createElement('legend');
-        legend.textContent = 'Your choice';
-        field.appendChild(legend);
-        field.addEventListener('userClicked', (e) => {
-            this.messageField.textContent = `${messages[User.findWinner(this.computerChoice(), e.detail)]}`;
-            });
+
+        this.messageField; // will be set later
+        this.overlay; // will be set later
+        this.form = document.createElement('form');
+        this.field = document.createElement('fieldset');
+        this.legend = document.createElement('legend');
+        this.legend.textContent = 'Your choice';
+
+        this.field.appendChild(this.legend);
+        //~ this.field.addEventListener('userClicked', (e) => {
+            //~ this.messageField.textContent = `${messages[User.findWinner(this.computerChoice(), e.detail)]}`});
+
+        this.field.addEventListener('userClicked', function(e){
+            let res = User.findWinner(this.computerChoice(), e.detail);
+            this.history.push(res);
+            this.messageField.textContent = `${messages[res]}`;
+            if (this.history.length === params.numberOfGames) {
+                this.field.dispatchEvent(new CustomEvent('gameOver', {bubbles: true, detail: this.history}))
+            };
+        }.bind(this)
+        );
+
+        this.field.addEventListener('gameOver', function(e){
+            msg2.textContent = e.detail}.bind(this)
+        );
 
         for (let i = 0; i < 3; i++){
             let inp = document.createElement('input');
@@ -58,7 +75,7 @@ class User {
             inp.value = i;
             inp.addEventListener('click',
                 function(){
-                    field.dispatchEvent(new CustomEvent('userClicked', {bubbles: true, detail: i}));
+                    this.field.dispatchEvent(new CustomEvent('userClicked', {bubbles: true, detail: i}));
                     //~ msg2.textContent = i;
                 }.bind(this));
 
@@ -68,12 +85,12 @@ class User {
             lab.setAttribute('for', inp.id);
             lab.innerHTML = `${texts[i]}<br>`;
 
-            field.appendChild(inp);
-            field.appendChild(lab);
+            this.field.appendChild(inp);
+            this.field.appendChild(lab);
 
         }
-        form.appendChild(field);
-        document.body.appendChild(form);
+        this.form.appendChild(this.field);
+        document.body.appendChild(this.form);
         this.messageField = this.createMessageField();
     }
 
@@ -82,6 +99,10 @@ class User {
         m.classList.add('messageBox');
         document.body.appendChild(m);
         return m;
+    };
+
+    createOverlay(){
+        const o = document.createElement('div');
     };
 
     computerChoice(){
