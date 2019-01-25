@@ -22,94 +22,104 @@ msg2.addEventListener('done', function(e){this.textContent = `clicked ${e.detail
 
 const W = [[0, 2, 1], [1, 0, 2], [2, 1, 0]];
 
-const userRadios = document.getElementsByName('user');
-
-for (let r of userRadios) {
-    r.addEventListener('click', click);
-    r.checked = false;
-}
-
 const params = { numberOfGames: 4 };
 
 
 class User {
 
     constructor(){
-        this.radios = [];
-        this.sel = -1;
-        this.history = [];
+      this.radios = [];
+      this.sel = -1;
+      this.history = [];
 
-        const texts = ['Paper', 'Scissors', 'Rock'];
-        const messages = ['It\'s a draw', 'You\'ve lost', 'You\'ve won'];
+      this.form;
+      this.fieldset;
 
-        this.messageField; // will be set later
-        this.overlay; // will be set later
-        this.form = document.createElement('form');
-        this.field = document.createElement('fieldset');
-        this.legend = document.createElement('legend');
-        this.legend.textContent = 'Your choice';
+      this.messageField; // will be set later
+      this.overlay; // will be set later
 
-        this.field.appendChild(this.legend);
-        //~ this.field.addEventListener('userClicked', (e) => {
-            //~ this.messageField.textContent = `${messages[User.findWinner(this.computerChoice(), e.detail)]}`});
-
-        this.field.addEventListener('userClicked', function(e){
-            let res = User.findWinner(this.computerChoice(), e.detail);
-            this.history.push(res);
-            this.messageField.textContent = `${messages[res]}`;
-            if (this.history.length === params.numberOfGames) {
-                this.field.dispatchEvent(new CustomEvent('gameOver', {bubbles: true, detail: this.history}))
-            };
-        }.bind(this)
-        );
-
-        this.field.addEventListener('gameOver', function(e){
-            msg2.textContent = e.detail}.bind(this)
-        );
-
-        for (let i = 0; i < 3; i++){
-            let inp = document.createElement('input');
-            inp.type = 'radio';
-            inp.id = `u_${i}`;
-            inp.name = 'user';
-            inp.value = i;
-            inp.addEventListener('click',
-                function(){
-                    this.field.dispatchEvent(new CustomEvent('userClicked', {bubbles: true, detail: i}));
-                    //~ msg2.textContent = i;
-                }.bind(this));
-
-            this.radios.push(inp);
-
-            let lab = document.createElement('label');
-            lab.setAttribute('for', inp.id);
-            lab.innerHTML = `${texts[i]}<br>`;
-
-            this.field.appendChild(inp);
-            this.field.appendChild(lab);
-
-        }
-        this.form.appendChild(this.field);
-        document.body.appendChild(this.form);
-        this.messageField = this.createMessageField();
+      this.createHtmlContent();
+      this.createMessageField();
+      this.createOverlay();
     }
 
-    createMessageField(){
-        const m = document.createElement('p');
-        m.classList.add('messageBox');
-        document.body.appendChild(m);
-        return m;
+    createHtmlContent() {
+      const texts = ['Paper', 'Scissors', 'Rock'];
+      const messages = ['It\'s a draw', 'You\'ve lost', 'You\'ve won'];
+
+      this.form = document.createElement('form');
+      this.fieldset = document.createElement('fieldset');
+
+      const legend = document.createElement('legend');
+      legend.textContent = 'Your choice';
+      this.fieldset.appendChild(legend);
+
+      for (let i = 0; i < 3; i++){
+          let inp = document.createElement('input');
+          inp.type = 'radio';
+          inp.id = `u_${i}`;
+          inp.name = 'user';
+          inp.value = i;
+          inp.checked = false;
+          // radios wysyłają info do fieldseta
+          inp.addEventListener('click',
+              function(){
+                  this.fieldset.dispatchEvent(new CustomEvent('userClicked', {bubbles: true, detail: i}));
+                  msg2.textContent = i;
+              }.bind(this));
+
+          let lab = document.createElement('label');
+          lab.for = inp.id;
+          // lab.setAttribute('for', inp.id);
+          lab.innerHTML = `${texts[i]}<br>`;
+
+          this.radios.push(inp);
+          this.fieldset.appendChild(inp);
+          this.fieldset.appendChild(lab);
+      }
+
+      this.form.appendChild(this.fieldset)
+      document.body.appendChild(this.form);
+
+      //~ this.field.addEventListener('userClicked', (e) => {
+          //~ this.messageField.textContent = `${messages[User.findWinner(this.computerChoice(), e.detail)]}`});
+
+      this.fieldset.addEventListener('userClicked', function(e){
+          let res = this.findWinner(this.computerChoice(), e.detail);
+          this.history.push(res);
+          this.messageField.textContent = `${messages[res]}`;
+          if (this.history.length === parseInt(params.numberOfGames)) {
+              this.fieldset.dispatchEvent(new CustomEvent('gameOver', {bubbles: true, detail: this.history}));
+          }
+        }.bind(this)
+      );
+
+      this.fieldset.addEventListener('gameOver', function(e){
+          // msg2.textContent = e.detail;
+          this.overlay.classList.replace('hidden', 'visible');
+          this.
+        }.bind(this)
+      );
+
+    }
+
+    createMessageField() {
+        this.messageField = document.createElement('p');
+        this.messageField.classList.add('messageBox');
+        document.body.appendChild(this.messageField);
     };
 
-    createOverlay(){
-        const o = document.createElement('div');
+    createOverlay() {
+        this.overlay = document.createElement('div');
+        this.overlay.classList.add('overlay', 'hidden');
+        document.body.appendChild(this.overlay);
     };
 
-    computerChoice(){
+    computerChoice() {
         return Math.floor(Math.random() * 3);
     }
 
-    static findWinner(u, c){
+    findWinner(u, c){
         // 0 - draw, 1 - u wins, 2 - c wins
 
         const W = [[0, 2, 1], [1, 0, 2], [2, 1, 0]];
@@ -134,7 +144,6 @@ class User {
 }
 
 const user = new User();
-
 
 /*
 
