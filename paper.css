@@ -1,3 +1,13 @@
+input[type="number"] {
+  margin-top: 50px;
+  background: fuchsia;
+  color: blue;
+}
+
+fieldset {
+  border-radius: 5px;
+}
+
 form {
     margin: 0 auto;
     width: 40%;

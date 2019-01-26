@@ -1,7 +1,6 @@
 'use strict';
 /*
 W shows the winner of the game:
-
   W[first_player_choice][second_player_choice] -> result
 
   results: 0 - draw, 1 - first player wins, 2 - second player wins
@@ -10,35 +9,31 @@ W shows the winner of the game:
 00 -> 0     10 -> 1     20 -> 2
 01 -> 2     11 -> 0     21 -> 1
 02 -> 1     12 -> 2     22 -> 0
-
 */
-
-
-const msg = document.getElementById('msg');
-msg.addEventListener('done', function(e){this.textContent = `clicked ${e.detail}`});
-
-const msg2 = document.getElementById('msg2');
-msg2.addEventListener('done', function(e){this.textContent = `clicked ${e.detail}`});
-
-const messages = ['It\'s a draw', 'You\'ve won', 'You\'ve lost'];
-const texts = ['Paper', 'Scissors', 'Rock'];
-
 const W = [[0, 2, 1], [1, 0, 2], [2, 1, 0]];
 
-const params = { numberOfGames: 4 };
+const messages = ['It\'s a draw', 'You\'ve won', 'You\'ve lost'];
+const newGameMsg = 'Press \'New game\' and set number of games';
+const texts = ['Paper', 'Scissors', 'Rock'];
+
 
 class User {
 
-    constructor(){
-      this.radios = [];
-      this.sel = -1;
-      this.history = [];
+    constructor(numberOfGames){
+      this.radios = [];   // filled by createHtmlContent
+      this.history = [];  // for round results
+      this.numberOfGames = 0;
 
-      this.form;
-      this.fieldset;
+      this.form;      // will be set by createHtmlContent
+      this.fieldset;  // will be set by createHtmlContent
+      this.newgameButton;   // will be set by createHtmlContent
+      this.newgameInput;  // will be set by createHtmlContent
+      this.newgameParamsOK; // will be set by createHtmlContent
 
-      this.messageField; // will be set later
-      this.overlay; // will be set later
+      this.closeOverlayButton;  //// will be set by createHtmlContent
+
+      this.messageField;  // will be set by createMessageField
+      this.overlay;       // will be set by createOverlay
 
       this.createHtmlContent();
       this.createMessageField();
@@ -52,49 +47,104 @@ class User {
       const legend = document.createElement('legend');
       legend.textContent = 'Your choice';
       this.fieldset.appendChild(legend);
+      //legend done
 
-      for (let i = 0; i < 3; i++){
+      // now create radios
+      for (let i = 0; i < 3; i++) {
           let inp = document.createElement('input');
           inp.type = 'radio';
           inp.id = `u_${i}`;
           inp.name = 'user';
           inp.value = i;
           inp.checked = false;
-          // radios wysyłają info do fieldseta
+          // radios send info to fieldset
           inp.addEventListener('click',
               function(){
                   this.fieldset.dispatchEvent(new CustomEvent('userClicked', {bubbles: true, detail: i}));
               }.bind(this));
 
+          // now labels for radios
           let lab = document.createElement('label');
           lab.setAttribute('for', inp.id);
-          // lab.setAttribute('for', inp.id);
           lab.innerHTML = `${texts[i]}<br>`;
 
+          // in appears that this.radios list is not necessary. to be removed in next verion :-)
           this.radios.push(inp);
           this.fieldset.appendChild(inp);
           this.fieldset.appendChild(lab);
-      }
+      } // radios done
 
+      // I guess in next version there should be a container instead of body
       this.form.appendChild(this.fieldset)
       document.body.appendChild(this.form);
+      // form done
 
-      //~ this.field.addEventListener('userClicked', (e) => {
-          //~ this.messageField.textContent = `${messages[User.findWinner(this.computerChoice(), e.detail)]}`});
+      // this button will always be visible
+      this.newgameButton = document.createElement('button');
+      this.newgameButton.textContent = 'New game';
+      this.newgameButton.addEventListener('click', this.newGame.bind(this));
+      document.body.appendChild(this.newgameButton);
+      // done
 
+      // this button is created but inserted only when needed
+      this.newgameParamsOK = document.createElement('button');
+      this.newgameParamsOK.textContent = 'OK';
+      this.newgameParamsOK.addEventListener('click', ()=>{
+        // set value
+        this.numberOfGames = this.newgameInput.value;
+        // hide overlay
+        this.overlay.classList.replace('visible', 'hidden');
+        this.messageField.textContent = 'Start playing';
+        // remove children of overlay so they are not visible
+        this.newgameInput.remove();
+        this.closeOverlayButton.remove();
+        this.newgameParamsOK.remove();
+      });
+      // done
+
+      // this button is created but inserted only when needed to an overlay
+      this.closeOverlayButton = document.createElement('button');
+      this.closeOverlayButton.textContent = 'Close';
+      this.closeOverlayButton.addEventListener('click', ()=>{
+        this.overlay.classList.replace('visible', 'hidden');
+        // overlay may have a table as a child. how to delete it?
+        // overlay has also closeOverlayButton as a child
+        this.overlay.innerHTML = '';  // ????????????
+      });
+      // done
+
+      // this button is created but inserted only when needed to an overlay
+      this.newgameInput = document.createElement('input');
+      this.newgameInput.setAttribute('type', 'number');
+      this.newgameInput.min = 4;
+      this.newgameInput.max = 12;
+      this.newgameInput.value = 4;
+      // done
+
+      // should be next to fieldset ?
       this.fieldset.addEventListener('userClicked', function(e){
+        // this.numberOfGames = 0  -> game is not initialised
+          if (!this.numberOfGames) {
+            return
+          }
+          // else
           let c = this.computerChoice();
           let res = this.findWinner(c, e.detail);
+          // save result
           this.history.push([e.detail, c, res]);
+          // show message
           this.messageField.textContent = `${messages[res]}`;
-          if (this.history.length === parseInt(params.numberOfGames)) {
+          // test if end of game
+          if (this.history.length === parseInt(this.numberOfGames)) {
               this.fieldset.dispatchEvent(new CustomEvent('gameOver', {bubbles: true, detail: this.history}));
           }
-        }.bind(this)
+        }.bind(this)  // maybe use arrow function insted?
       );
 
       this.fieldset.addEventListener('gameOver', function(e){
+        // table will be added dynamically to overlay and then deleted by closeOverlayButton
           const table = document.createElement('table');
+          // create header
           const th = document.createElement('tr');
           for (let h of ['you', 'computer', 'result']) {
             const td = document.createElement('th');
@@ -102,6 +152,8 @@ class User {
             th.appendChild(td);
           }
           table.appendChild(th);
+          // header done
+          // now rows
           for (let h of this.history){
             const row = document.createElement('tr');
             let i = 0;
@@ -113,31 +165,43 @@ class User {
             }
             table.appendChild(row);
           }
+          // done
+          // final row with results summary
           const p = document.createElement('tr');
           p.innerHTML = `<td colspan=3>${this.gameWinner()}</td>`;
           table.appendChild(p);
+          // done
+
+          this.history = [];
+          this.numberOfGames = 0;
+          this.messageField.textContent = newGameMsg;
 
           this.overlay.classList.replace('hidden', 'visible');
           this.overlay.appendChild(table);
-          this.messageField.classList.add('hidden');
+          // this button will destroy table and remove itself from overlay
+          this.overlay.appendChild(this.closeOverlayButton);
         }.bind(this)
       );
+    }
+
+    newGame() {
+      // maybe this should reset this.history and this.numberOfGames ?
+      this.overlay.classList.replace('hidden', 'visible');
+      this.overlay.appendChild(this.newgameInput);
+      this.overlay.appendChild(this.newgameParamsOK);
+      this.overlay.appendChild(this.closeOverlayButton);
     }
 
     createMessageField() {
         this.messageField = document.createElement('p');
         this.messageField.classList.add('messageBox');
+        this.messageField.textContent = newGameMsg;
         document.body.appendChild(this.messageField);
     };
 
     createOverlay() {
         this.overlay = document.createElement('div');
         this.overlay.classList.add('overlay', 'hidden');
-        this.overlay.addEventListener('click', ()=>{
-          this.overlay.innerHTML = '';
-          this.overlay.classList.replace('visible', 'hidden')
-        }
-        );
         document.body.appendChild(this.overlay);
     };
 
@@ -179,11 +243,6 @@ class User {
       }
       return you < comp ? 'You\'ve lost the game' : 'You\'ve won the game'
     }
-
-    done(){
-        // ?
-    };
-
 }
 
 const user = new User();
