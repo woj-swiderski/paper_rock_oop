@@ -20,10 +20,12 @@ msg.addEventListener('done', function(e){this.textContent = `clicked ${e.detail}
 const msg2 = document.getElementById('msg2');
 msg2.addEventListener('done', function(e){this.textContent = `clicked ${e.detail}`});
 
+const messages = ['It\'s a draw', 'You\'ve won', 'You\'ve lost'];
+const texts = ['Paper', 'Scissors', 'Rock'];
+
 const W = [[0, 2, 1], [1, 0, 2], [2, 1, 0]];
 
 const params = { numberOfGames: 4 };
-
 
 class User {
 
@@ -44,9 +46,6 @@ class User {
     }
 
     createHtmlContent() {
-      const texts = ['Paper', 'Scissors', 'Rock'];
-      const messages = ['It\'s a draw', 'You\'ve lost', 'You\'ve won'];
-
       this.form = document.createElement('form');
       this.fieldset = document.createElement('fieldset');
 
@@ -65,11 +64,10 @@ class User {
           inp.addEventListener('click',
               function(){
                   this.fieldset.dispatchEvent(new CustomEvent('userClicked', {bubbles: true, detail: i}));
-                  msg2.textContent = i;
               }.bind(this));
 
           let lab = document.createElement('label');
-          lab.for = inp.id;
+          lab.setAttribute('for', inp.id);
           // lab.setAttribute('for', inp.id);
           lab.innerHTML = `${texts[i]}<br>`;
 
@@ -85,8 +83,9 @@ class User {
           //~ this.messageField.textContent = `${messages[User.findWinner(this.computerChoice(), e.detail)]}`});
 
       this.fieldset.addEventListener('userClicked', function(e){
-          let res = this.findWinner(this.computerChoice(), e.detail);
-          this.history.push(res);
+          let c = this.computerChoice();
+          let res = this.findWinner(c, e.detail);
+          this.history.push([e.detail, c, res]);
           this.messageField.textContent = `${messages[res]}`;
           if (this.history.length === parseInt(params.numberOfGames)) {
               this.fieldset.dispatchEvent(new CustomEvent('gameOver', {bubbles: true, detail: this.history}));
@@ -95,12 +94,34 @@ class User {
       );
 
       this.fieldset.addEventListener('gameOver', function(e){
-          // msg2.textContent = e.detail;
+          const table = document.createElement('table');
+          const th = document.createElement('tr');
+          for (let h of ['you', 'computer', 'result']) {
+            const td = document.createElement('th');
+            td.innerText = h;
+            th.appendChild(td);
+          }
+          table.appendChild(th);
+          for (let h of this.history){
+            const row = document.createElement('tr');
+            let i = 0;
+            for (let c of h){
+              i++;
+              const td = document.createElement('td');
+              td.innerText = (i === 3 ? messages[c] : texts[c]);
+              row.appendChild(td);
+            }
+            table.appendChild(row);
+          }
+          const p = document.createElement('tr');
+          p.innerHTML = `<td colspan=3>${this.gameWinner()}</td>`;
+          table.appendChild(p);
+
           this.overlay.classList.replace('hidden', 'visible');
-          this.
+          this.overlay.appendChild(table);
+          this.messageField.classList.add('hidden');
         }.bind(this)
       );
-
     }
 
     createMessageField() {
@@ -112,6 +133,11 @@ class User {
     createOverlay() {
         this.overlay = document.createElement('div');
         this.overlay.classList.add('overlay', 'hidden');
+        this.overlay.addEventListener('click', ()=>{
+          this.overlay.innerHTML = '';
+          this.overlay.classList.replace('visible', 'hidden')
+        }
+        );
         document.body.appendChild(this.overlay);
     };
 
@@ -135,6 +161,23 @@ class User {
             case 2:
                 return 1
         }
+    }
+
+    gameWinner() {
+      let you, comp;
+      you = comp = 0;
+      for (let [ , , i] of this.history) {
+        if (i &&  i === 1) {
+          you++
+        }
+        else if (i &&  i === 2) {
+          comp++
+        }
+      }
+      if (you === comp) {
+        return 'The game is a draw'
+      }
+      return you < comp ? 'You\'ve lost the game' : 'You\'ve won the game'
     }
 
     done(){

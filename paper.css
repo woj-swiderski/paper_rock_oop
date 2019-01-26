@@ -3,6 +3,19 @@ form {
     width: 40%;
 }
 
+table {
+  border: 1px solid black;
+  border-collapse: collapse;
+  background: white;
+  margin: 0 auto;
+  margin-top: 10em;
+}
+
+td, th {
+  border: 1px solid black;
+  padding: 5px;
+}
+
 .message2 {
     border: 1px solid black;
     padding: 10px;
